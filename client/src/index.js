@@ -16,5 +16,18 @@ root.render(
     >
       This website uses cookies to enhance the user experience.
     </CookieConsent>
+    <footer>
+      <h3>Made by Thomas Kim</h3>
+      <p>
+        <a href="https://backend-login-system.herokuapp.com">
+          Check out the backend!
+        </a>
+      </p>
+      <p>
+        <a href="https://www.github.com/thomasjuhoonkim">
+          Check out my Github!
+        </a>
+      </p>
+    </footer>
   </>
 );
