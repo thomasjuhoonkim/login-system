@@ -46,6 +46,7 @@ function App() {
       localStorage.setItem("token", response.data.token);
       setloggedInUsername(response.data.result[0].username);
       setLoginStatus(true);
+      setAuthStatus(false);
     });
   };
 
@@ -124,7 +125,7 @@ function App() {
         <h3>Not logged in.</h3>
       )}
       {loginStatus && (
-        <button onClick={userAuthentication}>Check if authenticated</button>
+        <button onClick={userAuthentication}>Authenticate</button>
       )}
       {authStatus ? (
         <h3>Authenticated using token {localStorage.getItem("token")}</h3>

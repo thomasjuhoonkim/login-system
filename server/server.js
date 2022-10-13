@@ -43,18 +43,51 @@ app.use(
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    cookies: {
-      expires: 60 * 5,
+    proxy: true,
+    cookie: {
+      maxAge: 60 * 5 * 1000,
+      sameSite: "none",
+      secure: true,
+      httpOnly: true,
     },
   })
 );
 
-const db = mysql.createConnection({
-  user: process.env.DB_USERNAME,
-  host: process.env.DB_HOST,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-});
+// database connection
+var db;
+const handleDisconnect = () => {
+  db = mysql.createConnection({
+    user: process.env.DB_USERNAME,
+    host: process.env.DB_HOST,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+  }); // Recreate the connection, since
+  // the old one cannot be reused.
+
+  db.connect(function (err) {
+    // The server is either down
+    if (err) {
+      // or restarting (takes a while sometimes).
+      console.log("error when connecting to db:", err);
+      setTimeout(handleDisconnect, 2000); // We introduce a delay before attempting to reconnect,
+    } // to avoid a hot loop, and to allow our node script to
+  }); // process asynchronous requests in the meantime.
+  // If you're also serving http, display a 503 error.
+  db.on("error", function (err) {
+    console.log("db error", err);
+    if (err.code === "PROTOCOL_CONNECTION_LOST") {
+      // Connection to the MySQL server is usually
+      handleDisconnect(); // lost due to either server restart, or a
+      console.log("Server connection restarted.");
+    } else {
+      // connnection idle timeout (the wait_timeout
+      throw err; // server variable configures this)
+    }
+  });
+};
+
+// initalize database connection
+handleDisconnect();
 
 // greeting page
 app.get("/", (req, res) => {
@@ -141,7 +174,6 @@ app.post("/login", (req, res) => {
             const token = jwt.sign({ id }, jwtSecret, {
               expiresIn: 60 * 5,
             });
-            req.session.user = result;
 
             res.json({ auth: true, token: token, result: result });
             return;
