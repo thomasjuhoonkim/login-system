@@ -12,8 +12,13 @@ const session = require("express-session");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 
+// authentication dependencies
+const jwt = require("jsonwebtoken");
+
 const app = express();
 const port = 5000;
+const sessionSecret = "abcdefghijklmnopqrstuvwxyz";
+const jwtSecret = "thomaskim1010";
 
 app.use(express.json());
 app.use(
@@ -28,7 +33,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   session({
     key: "userId",
-    secret: "abcdefghijklmnopqrstuvwxyz",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookies: {
@@ -55,7 +60,7 @@ app.post("/register", (req, res) => {
     }
 
     db.query(
-      "INSERT INTO users (username, password) VALUES (?,?)",
+      "INSERT INTO users (username, password) VALUES (?,?);",
       [username, hash],
       (err, result) => {
         if (err) {
@@ -66,12 +71,34 @@ app.post("/register", (req, res) => {
   });
 });
 
+const verifyJWT = (req, res, next) => {
+  const token = req.headers["x-access-token"];
+
+  if (!token) {
+    res.json({ auth: false, message: "No token provided." });
+    return;
+  }
+  jwt.verify(token, jwtSecret, (err, decoded) => {
+    if (err) {
+      res.json({ auth: false, message: "Authentication failed." });
+      return;
+    }
+    req.userId = decoded.id;
+    next();
+  });
+};
+
+// authentication
+app.get("/auth", verifyJWT, (req, res) => {
+  res.json({ message: "Authentication successful." });
+});
+
 // check if logged in
 app.get("/login", (req, res) => {
   if (req.session.user) {
-    res.send({ loggedIn: true, user: req.session.user });
+    res.json({ loggedIn: true, user: req.session.user });
   } else {
-    res.send({ loggedIn: false });
+    res.json({ loggedIn: false });
   }
 });
 
@@ -81,25 +108,37 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
 
   db.query(
-    "SELECT * FROM users WHERE username = ?",
+    "SELECT * FROM users WHERE username = ?;",
     username,
     (err, result) => {
       if (err) {
         res.send({ err: err });
-      } else {
-        if (result.length > 0) {
-          bcrypt.compare(password, result[0].password, (err, response) => {
-            if (response) {
-              req.session.user = result;
-              res.send(result);
-            } else {
-              res.send({ message: "Wrong username/password combination!" });
-            }
-          });
-        } else {
-          res.send({ message: "User doesn't exist!" });
-        }
+        return;
       }
+
+      if (result.length > 0) {
+        bcrypt.compare(password, result[0].password, (err, response) => {
+          if (response) {
+            req.session.user = result;
+
+            // make jsonwebtoken on successful authorization
+            const id = result[0].id;
+            const token = jwt.sign({ id }, jwtSecret, {
+              expiresIn: 60 * 5,
+            });
+            req.session.user = result;
+
+            res.json({ auth: true, token: token, result: result });
+            return;
+          }
+          res.send({
+            auth: false,
+            message: "Wrong username/password combination.",
+          });
+        });
+        return;
+      }
+      res.send({ auth: false, message: "No user exists!" });
     }
   );
 });
