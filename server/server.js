@@ -15,15 +15,22 @@ const saltRounds = 10;
 // authentication dependencies
 const jwt = require("jsonwebtoken");
 
+// greeting page dependencies
+const path = require("path");
+
+// environment variables
+require("dotenv").config();
+const sessionSecret = process.env.SESSION_SECRET;
+const jwtSecret = process.env.JWT_SECRET;
+
 const app = express();
-const port = 5000;
-const sessionSecret = "abcdefghijklmnopqrstuvwxyz";
-const jwtSecret = "thomaskim1010";
+const port = process.env.PORT || 5000;
+const link = "https://login-system-1010.web.app";
 
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: [link, "http://localhost:3000"],
     methods: ["GET", "POST"],
     credentials: true,
   })
@@ -37,16 +44,21 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookies: {
-      expires: 60 * 60 * 24,
+      expires: 60 * 5,
     },
   })
 );
 
 const db = mysql.createConnection({
-  user: "root",
-  host: "localhost",
-  password: "thomas1010",
-  database: "LoginSystem",
+  user: process.env.DB_USERNAME,
+  host: process.env.DB_HOST,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
+});
+
+// greeting page
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "/assets/index.html"));
 });
 
 // register
@@ -65,7 +77,10 @@ app.post("/register", (req, res) => {
       (err, result) => {
         if (err) {
           console.log(err);
+          res.json({ registered: false });
+          return;
         }
+        res.json({ registered: true, username: username });
       }
     );
   });
@@ -90,13 +105,13 @@ const verifyJWT = (req, res, next) => {
 
 // authentication
 app.get("/auth", verifyJWT, (req, res) => {
-  res.json({ message: "Authentication successful." });
+  res.json({ auth: true, message: "Authentication successful." });
 });
 
 // check if logged in
 app.get("/login", (req, res) => {
   if (req.session.user) {
-    res.json({ loggedIn: true, user: req.session.user });
+    res.json({ loggedIn: true, user: req.session.user[0].username });
   } else {
     res.json({ loggedIn: false });
   }

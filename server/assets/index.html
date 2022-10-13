@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      td,
+      th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 4px;
+      }
+      tr:nth-child(even) {
+        background-color: #dddddd;
+      }
+    </style>
+    <title>Login System API</title>
+  </head>
+  <body>
+    <h1>Welcome to Thomas' Login System API!</h1>
+    <p>
+      This webpage is simply the greeting page and serves as a README for this
+      API, should you arrive upon it.
+    </p>
+
+    <hr />
+
+    <h3>Request types for the API</h3>
+    <table>
+      <tr>
+        <th>Request</th>
+        <th>Endpoint</th>
+        <th>Requirements</th>
+        <th>Response</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td>GET</td>
+        <td>/</td>
+        <td>None</td>
+        <td>Static HTML</td>
+        <td>Serves the greeting page.</td>
+      </tr>
+      <tr>
+        <td>GET</td>
+        <td>/login</td>
+        <td>Session: User</td>
+        <td>Authorization Status, User Session</td>
+        <td>
+          Checks if user is already logged in using session storage and cookies.
+        </td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td>/register</td>
+        <td>Body: Username, Password</td>
+        <td>None</td>
+        <td>
+          Registers a user by inserting row with username and hashed password
+          into MySQL database.
+        </td>
+      </tr>
+      <tr>
+        <td>POST</td>
+        <td>/login</td>
+        <td>Body: Username, Password</td>
+        <td>Authorization Status, JWT Token, User Information</td>
+        <td>
+          Checks if user credentials in request match a user in the database
+          using strictly the username, then checks if password matches the
+          hashed password in the database. Upon successful authorization, a user
+          session is saved into the session storage and a JSON Web Token is
+          issued and saved in the local storage.
+        </td>
+      </tr>
+      <tr>
+        <td>GET</td>
+        <td>/auth</td>
+        <td>Header: X-Access-Token</td>
+        <td>Authentication Status</td>
+        <td>Checks if the JWT Token matches the one issued to the user.</td>
+      </tr>
+    </table>
+
+    <hr />
+
+    <h4>Thanks for checking this out!</h4>
+    <p>Made by Thomas Kim</p>
+    <a href="https://www.github.com/thomasjuhoonkim">Check out my github!</a>
+  </body>
+</html>
