@@ -27,6 +27,7 @@ function App() {
     }).then((response) => {
       if (!response.data.registered) {
         setRegistered(false);
+        return;
       }
       setRegistered(true);
       setRegisteredUsername(response.data.username);
